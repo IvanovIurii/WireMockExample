@@ -169,3 +169,15 @@ Use the opportunity to show your development skills especially if you are applyi
 
 Good luck!
 
+Notes from Developer
+==========
+1. I was really trying to finish the task in 4 hours. I used timer. Eventually I could not. I took me around 6 hours.
+2. Because I was in a hurry, there are not so many tests as I wanted to have (or I would write in production code).
+3. There are some things which I do not like, but I could not rewrite them because of a limited time. I had to work with things what I chose:
+- RestClient is not that convenient as I thought, I would us FeignClient next time
+- Maybe I should not create a model for responses and use String with regular expressions (responses are simple)
+- I wanted to use CompletableFuture, I think it is possible here, but I spent some time on research and realised that it would require more time from me
+
+4. To run the solution just run it from `MyApplication.class` after fixture server is up
+5. To run tests execute: `mvn clean test`
+
