@@ -1,8 +1,6 @@
 package org.example.service;
 
-import org.example.model.SourceResponse;
-import org.example.model.SourceAResponse;
-import org.example.model.SourceBResponse;
+import org.example.model.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,7 @@ public class SolutionService {
     private static final Logger logger = LoggerFactory.getLogger(SolutionService.class);
 
     private final SourceSinkService sourceSinkService;
-    private Set<String> ids = new HashSet<>();
+    private final Set<String> ids = new HashSet<>();
 
     public SolutionService(SourceSinkService sourceSinkService) {
         this.sourceSinkService = sourceSinkService;
@@ -25,19 +23,19 @@ public class SolutionService {
     public void execute() {
         logger.info("Start the process");
         while (true) {
-            Optional<SourceAResponse> optionalSourceA = sourceSinkService.getSourceAResponse();
+            Optional<Response> optionalSourceA = sourceSinkService.getSourceAResponse();
             boolean isDoneA = false;
 
             if (optionalSourceA.isPresent()) {
-                SourceAResponse sourceAResponse = optionalSourceA.get();
+                Response sourceAResponse = optionalSourceA.get();
                 isDoneA = processSourceResponse(sourceAResponse);
             }
 
-            Optional<SourceBResponse> optionalSourceB = sourceSinkService.getSourceBResponse();
+            Optional<Response> optionalSourceB = sourceSinkService.getSourceBResponse();
             boolean isDoneB = false;
 
             if (optionalSourceB.isPresent()) {
-                SourceBResponse sourceBResponse = optionalSourceB.get();
+                Response sourceBResponse = optionalSourceB.get();
                 isDoneB = processSourceResponse(sourceBResponse);
             }
 
@@ -47,15 +45,14 @@ public class SolutionService {
         logger.info("End the process");
     }
 
-    private boolean processSourceResponse(SourceResponse source) {
-        boolean isDoneA;
-        isDoneA = source.isDone();
-        // id can be null when it is done
-        if (!isDoneA) {
-            String id = source.getId();
+    private boolean processSourceResponse(Response sourceResponse) {
+        boolean isDone;
+        isDone = "done".equals(sourceResponse.status());
+        if (!isDone) {
+            String id = sourceResponse.id();
             postJoined(id);
         }
-        return isDoneA;
+        return isDone;
     }
 
     private void postJoined(String id) {

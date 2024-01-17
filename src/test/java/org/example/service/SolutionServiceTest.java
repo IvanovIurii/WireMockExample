@@ -1,9 +1,6 @@
 package org.example.service;
 
-import org.example.model.SourceAResponse;
-import org.example.model.SourceBDoneNode;
-import org.example.model.SourceBIdNode;
-import org.example.model.SourceBResponse;
+import org.example.model.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,12 +35,12 @@ class SolutionServiceTest {
 
     @Test
     void shouldExecuteCorrectly() {
-        SourceAResponse sourceAResponseJoined1 = new SourceAResponse("ok", "1");
-        SourceAResponse sourceAResponseJoined2 = new SourceAResponse("ok", "2");
-        SourceAResponse sourceAResponseOrphaned = new SourceAResponse("ok", "123");
-        SourceAResponse sourceAResponseDone = new SourceAResponse("done", null);
+        Response sourceAResponseJoined1 = new Response("1", "ok");
+        Response sourceAResponseJoined2 = new Response("2", "ok");
+        Response sourceAResponseOrphaned = new Response("123", "ok");
+        Response sourceAResponseDone = new Response(null, "done");
 
-        Optional<SourceAResponse> sourceAResponseMalformedSkipped = Optional.empty();
+        Optional<Response> sourceAResponseMalformedSkipped = Optional.empty();
 
         when(sourceSinkServiceMock.getSourceAResponse())
                 .thenReturn(Optional.of(sourceAResponseJoined1))
@@ -52,14 +49,14 @@ class SolutionServiceTest {
                 .thenReturn(Optional.of(sourceAResponseJoined2))
                 .thenReturn(Optional.of(sourceAResponseDone));
 
-        SourceBResponse sourceBResponseJoined1 = new SourceBResponse(new SourceBIdNode("1"), null);
-        SourceBResponse sourceBResponseJoined2 = new SourceBResponse(new SourceBIdNode("2"), null);
-        SourceBResponse sourceBResponseOrphaned1 = new SourceBResponse(new SourceBIdNode("456"), null);
-        SourceBResponse sourceBResponseOrphaned2 = new SourceBResponse(new SourceBIdNode("789"), null);
-        SourceBResponse sourceBResponseOrphaned3 = new SourceBResponse(new SourceBIdNode("999"), null);
-        SourceBResponse sourceBResponseDone = new SourceBResponse(null, new SourceBDoneNode());
+        Response sourceBResponseJoined1 = new Response(null, "1");
+        Response sourceBResponseJoined2 = new Response(null, "2");
+        Response sourceBResponseOrphaned1 = new Response(null, "456");
+        Response sourceBResponseOrphaned2 = new Response(null, "789");
+        Response sourceBResponseOrphaned3 = new Response(null, "999");
+        Response sourceBResponseDone = new Response(null, "done");
 
-        Optional<SourceBResponse> sourceBResponseMalformedSkipped = Optional.empty();
+        Optional<Response> sourceBResponseMalformedSkipped = Optional.empty();
 
         when(sourceSinkServiceMock.getSourceBResponse())
                 .thenReturn(Optional.of(sourceBResponseOrphaned1))

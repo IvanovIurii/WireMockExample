@@ -4,8 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.example.TestConfiguration;
-import org.example.model.SourceAResponse;
-import org.example.model.SourceBResponse;
+import org.example.model.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = TestConfiguration.class)
@@ -42,7 +41,7 @@ public class SourceSinkServiceTest {
         String payload = "{\"status\":\"ok\",\"id\":\"123\"}";
         stubForSourceA(payload);
 
-        Optional<SourceAResponse> sourceAResponse = sut.getSourceAResponse();
+        Optional<Response> sourceAResponse = sut.getSourceAResponse();
         assertTrue(sourceAResponse.isPresent());
         assertEquals("123", sourceAResponse.get().id());
         assertEquals("ok", sourceAResponse.get().status());
@@ -53,7 +52,7 @@ public class SourceSinkServiceTest {
         String payload = "{\"status\":\"ok\",\"id\":\"123}";
         stubForSourceA(payload);
 
-        Optional<SourceAResponse> sourceAResponse = sut.getSourceAResponse();
+        Optional<Response> sourceAResponse = sut.getSourceAResponse();
         assertTrue(sourceAResponse.isEmpty());
     }
 
@@ -62,10 +61,10 @@ public class SourceSinkServiceTest {
         String payload = "{\"status\":\"done\"}";
         stubForSourceA(payload);
 
-        Optional<SourceAResponse> sourceAResponse = sut.getSourceAResponse();
+        Optional<Response> sourceAResponse = sut.getSourceAResponse();
         assertTrue(sourceAResponse.isPresent());
         assertEquals("done", sourceAResponse.get().status());
-        assertTrue(sourceAResponse.get().isDone());
+        assertNull(sourceAResponse.get().id());
     }
 
     @Test
@@ -73,10 +72,10 @@ public class SourceSinkServiceTest {
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><id value=\"1378535db30df7a0f67a3fc7832ee8e5\"/></msg>";
         stubForSourceB(payload);
 
-        Optional<SourceBResponse> sourceAResponse = sut.getSourceBResponse();
+        Optional<Response> sourceAResponse = sut.getSourceBResponse();
         assertTrue(sourceAResponse.isPresent());
-        assertEquals("1378535db30df7a0f67a3fc7832ee8e5", sourceAResponse.get().getId());
-        assertFalse(sourceAResponse.get().isDone());
+        assertEquals("1378535db30df7a0f67a3fc7832ee8e5", sourceAResponse.get().id());
+        assertNull(sourceAResponse.get().status());
     }
 
     @Test
@@ -84,7 +83,7 @@ public class SourceSinkServiceTest {
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg>!@#$!@#$<foo/></msg>";
         stubForSourceB(payload);
 
-        Optional<SourceBResponse> sourceAResponse = sut.getSourceBResponse();
+        Optional<Response> sourceAResponse = sut.getSourceBResponse();
         assertTrue(sourceAResponse.isEmpty());
     }
 
@@ -93,9 +92,9 @@ public class SourceSinkServiceTest {
         String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><done/></msg>";
         stubForSourceB(payload);
 
-        Optional<SourceBResponse> sourceAResponse = sut.getSourceBResponse();
+        Optional<Response> sourceAResponse = sut.getSourceBResponse();
         assertTrue(sourceAResponse.isPresent());
-        assertTrue(sourceAResponse.get().isDone());
+        assertEquals("done", sourceAResponse.get().status());
     }
 
     @Test

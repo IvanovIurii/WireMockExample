@@ -4,8 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.example.model.SinkARequest;
-import org.example.model.SourceAResponse;
-import org.example.model.SourceBResponse;
+import org.example.model.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -13,10 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class SourceSinkService {
-    private static final Logger logger = LoggerFactory.getLogger(SolutionService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SourceSinkService.class);
 
     private final RestClient restClient;
     private final XmlMapper xmlMapper;
@@ -28,15 +29,15 @@ public class SourceSinkService {
         this.objectMapper = objectMapper;
     }
 
-    public Optional<SourceAResponse> getSourceAResponse() {
-        return getResponse("/source/a", objectMapper, SourceAResponse.class);
+    public Optional<Response> getSourceAResponse() {
+        return getResponse("/source/a", objectMapper);
     }
 
-    public Optional<SourceBResponse> getSourceBResponse() {
-        return getResponse("/source/b", xmlMapper, SourceBResponse.class);
+    public Optional<Response> getSourceBResponse() {
+        return getResponse("/source/b", xmlMapper);
     }
 
-    private <T> Optional<T> getResponse(String uri, ObjectMapper mapper, Class<T> cls) {
+    private Optional<Response> getResponse(String uri, ObjectMapper mapper) {
         logger.info("Making request");
         String body = restClient.get()
                 .uri(uri)
@@ -45,8 +46,20 @@ public class SourceSinkService {
 
         logger.info("Response: " + body);
 
+        if (mapper instanceof XmlMapper) {
+            Pattern pattern = Pattern.compile("<msg>(<id value=\"(.*)\"\\/>|<(.*)\\/>)<\\/msg>");
+            Matcher matcher = pattern.matcher(body);
+
+            if (matcher.find()) {
+                if (matcher.group(1).contains("done")) {
+                    return Optional.of(new Response(matcher.group(3), null));
+                }
+                return Optional.of(new Response(null, matcher.group(2)));
+            }
+        }
+
         try {
-            T value = mapper.readValue(body, cls);
+            Response value = mapper.readValue(body, Response.class);
             return Optional.ofNullable(value);
         } catch (JsonProcessingException e) {
             logger.debug("Response is malformed: " + body);
