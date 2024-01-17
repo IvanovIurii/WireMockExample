@@ -35,57 +35,55 @@ class SolutionServiceTest {
 
     @Test
     void shouldExecuteCorrectly() {
-        Response sourceAResponseJoined1 = new Response("1", "ok");
-        Response sourceAResponseJoined2 = new Response("2", "ok");
-        Response sourceAResponseOrphaned = new Response("123", "ok");
-        Response sourceAResponseDone = new Response(null, "done");
-
-        Optional<Response> sourceAResponseMalformedSkipped = Optional.empty();
-
-        when(sourceSinkServiceMock.getSourceAResponse())
-                .thenReturn(Optional.of(sourceAResponseJoined1))
-                .thenReturn(Optional.of(sourceAResponseOrphaned))
-                .thenReturn(sourceAResponseMalformedSkipped)
-                .thenReturn(Optional.of(sourceAResponseJoined2))
-                .thenReturn(Optional.of(sourceAResponseDone));
-
-        Response sourceBResponseJoined1 = new Response(null, "1");
-        Response sourceBResponseJoined2 = new Response(null, "2");
-        Response sourceBResponseOrphaned1 = new Response(null, "456");
-        Response sourceBResponseOrphaned2 = new Response(null, "789");
-        Response sourceBResponseOrphaned3 = new Response(null, "999");
-        Response sourceBResponseDone = new Response(null, "done");
-
-        Optional<Response> sourceBResponseMalformedSkipped = Optional.empty();
-
-        when(sourceSinkServiceMock.getSourceBResponse())
-                .thenReturn(Optional.of(sourceBResponseOrphaned1))
-                .thenReturn(Optional.of(sourceBResponseOrphaned2))
-                .thenReturn(sourceBResponseMalformedSkipped)
-                .thenReturn(Optional.of(sourceBResponseOrphaned3))
-                .thenReturn(Optional.of(sourceBResponseJoined1))
-                .thenReturn(Optional.of(sourceBResponseJoined2))
-                .thenReturn(Optional.of(sourceBResponseDone));
+        when(sourceSinkServiceMock.getSourceResponses())
+                .thenReturn(List.of(
+                        Optional.of(new Response("ok", "1")),
+                        Optional.of(new Response(null, "999"))
+                ))
+                .thenReturn(List.of(
+                        Optional.of(new Response("ok", "2")),
+                        Optional.of(new Response(null, "2"))
+                ))
+                .thenReturn(List.of(
+                        Optional.of(new Response(null, "1")),
+                        Optional.empty()
+                ))
+                .thenReturn(List.of(
+                        Optional.of(new Response("ok", "123")),
+                        Optional.of(new Response(null, "456"))
+                ))
+                .thenReturn(List.of(
+                        Optional.of(new Response("done", null)),
+                        Optional.empty()
+                ))
+                .thenReturn(List.of(
+                        Optional.of(new Response(null, "789")),
+                        Optional.of(new Response("done", null))
+                ))
+                .thenReturn(List.of(
+                        Optional.of(new Response("done", null)),
+                        Optional.of(new Response("done", null))
+                ));
 
         sut.execute();
 
-        verify(sourceSinkServiceMock, times(6)).post(kindArgumentCaptor.capture(), idArgumentCaptor.capture());
+        verify(sourceSinkServiceMock, times(6)).performActions(kindArgumentCaptor.capture(), idArgumentCaptor.capture());
 
         List<String> firstArgs = kindArgumentCaptor.getAllValues();
         List<String> secondArgs = idArgumentCaptor.getAllValues();
 
-        assertEquals("joined", firstArgs.get(0));
-        assertEquals("joined", firstArgs.get(1));
-        assertEquals("orphaned", firstArgs.get(2));
-        assertEquals("orphaned", firstArgs.get(3));
-        assertEquals("orphaned", firstArgs.get(4));
-        assertEquals("orphaned", firstArgs.get(5));
+        assertEquals("joined", secondArgs.get(0));
+        assertEquals("joined", secondArgs.get(1));
+        assertEquals("orphaned", secondArgs.get(2));
+        assertEquals("orphaned", secondArgs.get(3));
+        assertEquals("orphaned", secondArgs.get(4));
+        assertEquals("orphaned", secondArgs.get(5));
 
-        assertEquals("1", secondArgs.get(0));
-        assertEquals("2", secondArgs.get(1));
-        assertEquals("123", secondArgs.get(2));
-        assertEquals("456", secondArgs.get(3));
-        assertEquals("789", secondArgs.get(4));
-        assertEquals("999", secondArgs.get(5));
+        assertEquals("2", firstArgs.get(0));
+        assertEquals("1", firstArgs.get(1));
+        assertEquals("123", firstArgs.get(2));
+        assertEquals("456", firstArgs.get(3));
+        assertEquals("789", firstArgs.get(4));
+        assertEquals("999", firstArgs.get(5));
     }
 }

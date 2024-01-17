@@ -11,12 +11,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = TestConfiguration.class)
 public class SourceSinkServiceTest {
@@ -37,72 +38,132 @@ public class SourceSinkServiceTest {
     }
 
     @Test
-    public void shouldGetValidSourceAResponse() {
-        String payload = "{\"status\":\"ok\",\"id\":\"123\"}";
-        stubForSourceA(payload);
+    public void shouldGetValidSourcesResponses() {
+        String payloadA = "{\"status\":\"ok\",\"id\":\"123\"}";
+        stubForSourceA(payloadA);
 
-        Optional<Response> sourceAResponse = sut.getSourceAResponse();
-        assertTrue(sourceAResponse.isPresent());
-        assertEquals("123", sourceAResponse.get().id());
-        assertEquals("ok", sourceAResponse.get().status());
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><id value=\"1378535db30df7a0f67a3fc7832ee8e5\"/></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertEquals("123", responseList.get(0).get().id());
+        assertEquals("ok", responseList.get(0).get().status());
+
+        assertEquals("1378535db30df7a0f67a3fc7832ee8e5", responseList.get(1).get().id());
+        assertNull(responseList.get(1).get().status());
     }
 
     @Test
-    public void shouldGetSkipMalformedSourceAResponse() {
-        String payload = "{\"status\":\"ok\",\"id\":\"123}";
-        stubForSourceA(payload);
+    public void shouldGetValidSourcesResponsesWhenXMLMalformed() {
+        String payloadA = "{\"status\":\"ok\",\"id\":\"123\"}";
+        stubForSourceA(payloadA);
 
-        Optional<Response> sourceAResponse = sut.getSourceAResponse();
-        assertTrue(sourceAResponse.isEmpty());
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg>!@#$!@#$<foo/></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertEquals("123", responseList.get(0).get().id());
+        assertEquals("ok", responseList.get(0).get().status());
+
+        assertFalse(responseList.get(1).isPresent());
     }
 
     @Test
-    public void shouldReturnDoneStatusForSourceAResponse() {
-        String payload = "{\"status\":\"done\"}";
-        stubForSourceA(payload);
+    public void shouldGetValidSourcesResponsesWhenJSONMalformed() {
+        String payloadA = "{\"status\":\"ok\",\"id\":\"123}";
+        stubForSourceA(payloadA);
 
-        Optional<Response> sourceAResponse = sut.getSourceAResponse();
-        assertTrue(sourceAResponse.isPresent());
-        assertEquals("done", sourceAResponse.get().status());
-        assertNull(sourceAResponse.get().id());
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><id value=\"1378535db30df7a0f67a3fc7832ee8e5\"/></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertFalse(responseList.get(0).isPresent());
+
+        assertEquals("1378535db30df7a0f67a3fc7832ee8e5", responseList.get(1).get().id());
+        assertNull(responseList.get(1).get().status());
     }
 
     @Test
-    public void shouldGetValidSourceBResponse() {
-        String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><id value=\"1378535db30df7a0f67a3fc7832ee8e5\"/></msg>";
-        stubForSourceB(payload);
+    public void shouldGetEmptyListFromSourcesResponseWhenBothXMLAndJSONMalformed() {
+        String payloadA = "{\"status\":\"ok\",\"id\":\"123}";
+        stubForSourceA(payloadA);
 
-        Optional<Response> sourceAResponse = sut.getSourceBResponse();
-        assertTrue(sourceAResponse.isPresent());
-        assertEquals("1378535db30df7a0f67a3fc7832ee8e5", sourceAResponse.get().id());
-        assertNull(sourceAResponse.get().status());
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><ida asd f></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertFalse(responseList.get(0).isPresent());
+        assertFalse(responseList.get(1).isPresent());
     }
 
     @Test
-    public void shouldGetSkipMalformedSourceBResponse() {
-        String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg>!@#$!@#$<foo/></msg>";
-        stubForSourceB(payload);
+    public void shouldGetValidSourcesResponsesWhenXMLIsDone() {
+        String payloadA = "{\"status\":\"ok\",\"id\":\"123\"}";
+        stubForSourceA(payloadA);
 
-        Optional<Response> sourceAResponse = sut.getSourceBResponse();
-        assertTrue(sourceAResponse.isEmpty());
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><done/></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertEquals("123", responseList.get(0).get().id());
+        assertEquals("ok", responseList.get(0).get().status());
+
+        assertNull(responseList.get(1).get().id());
+        assertEquals("done", responseList.get(1).get().status());
     }
 
     @Test
-    public void shouldReturnDoneStatusForSourceBResponse() {
-        String payload = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><done/></msg>";
-        stubForSourceB(payload);
+    public void shouldGetValidSourcesResponsesWhenJSONIsDone() {
+        String payloadA = "{\"status\":\"done\"}";
+        stubForSourceA(payloadA);
 
-        Optional<Response> sourceAResponse = sut.getSourceBResponse();
-        assertTrue(sourceAResponse.isPresent());
-        assertEquals("done", sourceAResponse.get().status());
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><id value=\"1378535db30df7a0f67a3fc7832ee8e5\"/></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertNull(responseList.get(0).get().id());
+        assertEquals("done", responseList.get(0).get().status());
+
+        assertEquals("1378535db30df7a0f67a3fc7832ee8e5", responseList.get(1).get().id());
+        assertNull(responseList.get(1).get().status());
     }
 
+    @Test
+    public void shouldGetValidSourcesResponsesWhenBothJSONAndXMLDone() {
+        String payloadA = "{\"status\":\"done\"}";
+        stubForSourceA(payloadA);
+
+        String payloadB = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><msg><done/></msg>";
+        stubForSourceB(payloadB);
+
+        List<Optional<Response>> responseList = sut.getSourceResponses();
+        assertEquals(2, responseList.size());
+
+        assertNull(responseList.get(0).get().id());
+        assertEquals("done", responseList.get(0).get().status());
+
+        assertNull(responseList.get(1).get().id());
+        assertEquals("done", responseList.get(1).get().status());
+    }
+
+    // however there is no test for content-length problem
     @Test
     public void shouldPostWithoutAnyError() {
         wireMockServer.stubFor(WireMock.post(WireMock.urlEqualTo("/sink/a")));
-        assertDoesNotThrow(() -> sut.post("joined", "1"));
+        assertDoesNotThrow(() -> sut.performActions("joined", "1"));
     }
-
 
     private void stubForSourceA(String payload) {
         wireMockServer.stubFor(WireMock.get(WireMock.urlEqualTo("/source/a"))
