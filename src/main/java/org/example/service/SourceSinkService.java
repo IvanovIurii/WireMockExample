@@ -8,10 +8,14 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class SourceSinkService {
     private static final Logger logger = LoggerFactory.getLogger(SourceSinkService.class);
+    private final static ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     private final List<ResourceService> resourceServiceList;
     private final List<SinkService> sinkServiceList;
@@ -25,16 +29,21 @@ public class SourceSinkService {
         List<Optional<Response>> responseList = new ArrayList<>();
 
         for (ResourceService resourceService : resourceServiceList) {
-            try {
-                logger.info("Making request");
-                Optional<Response> optionalResponse = resourceService.getResource();
-                responseList.add(optionalResponse);
-            } catch (Exception e) {
-                logger.info("Response is malformed");
-                responseList.add(null);
-            }
+            logger.info("Making request");
+            Optional<Response> optionalResponse = resourceService.getResource();
+            responseList.add(optionalResponse);
         }
         return responseList;
+    }
+
+    public List<Optional<Response>> getSourceResponsesAsync() {
+        List<CompletableFuture<Optional<Response>>> futures = resourceServiceList.stream()
+                .map(resourceService -> CompletableFuture.supplyAsync(resourceService::getResource, executorService))
+                .toList();
+
+        return futures.stream()
+                .map(CompletableFuture::join)
+                .toList();
     }
 
     // not very straightforward name IMHO

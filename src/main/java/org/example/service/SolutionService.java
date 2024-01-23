@@ -23,6 +23,7 @@ public class SolutionService {
     }
 
     public void execute() {
+        long start = System.currentTimeMillis();
         logger.info("Start the process");
         while (true) {
             List<Optional<Response>> sourceResponses = sourceSinkService.getSourceResponses();
@@ -36,6 +37,8 @@ public class SolutionService {
         }
         postOrphaned();
         logger.info("End the process");
+        long end = System.currentTimeMillis();
+        logger.info("Took in ms: {}", end - start);
     }
 
     private void processSourceResponse(String id) {
